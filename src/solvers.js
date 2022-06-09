@@ -16,7 +16,39 @@
 
 
 window.findNRooksSolution = function(n) {
-  var solution = undefined;
+  var board = new Board({n: n});
+  var solution;
+  //arguments board + row;
+  var helper = function (boardState, currentRow, piecesPlaced, conflictRows, conflictCols) {
+    var rowCheck = conflictRows || new Array(n);
+    var colCheck = conflictCols || new Array(n);
+    var row = currentRow;
+    var count = piecesPlaced;
+    for (let col = 0; col < n; col++) {
+    //with the new row, for each spot in the row, try to place a piece;
+      boardState.togglePiece(row, col);
+    //if piece is valid go down;
+      if (rowCheck[row] || colCheck[col]) {
+        //if conflict, take off the piece, and continue to the next column
+        boardState.togglePiece(row, col);
+        continue;
+      } else {
+        count++;
+        if (count === n) {
+          solution = new Board(boardState).rows();
+          break;
+        }
+        rowCheck[row] = 1;
+        colCheck[col] = 1;
+        helper(boardState, row + 1, count, rowCheck, colCheck);
+        // rowCheck[row] = 0;
+        // colCheck[col] = 0;
+        // boardState.togglePiece(row, col);
+        // count--;
+      }
+    }
+  }
+  helper(board, 0, 0);
 
   console.log('Single solution for ' + n + ' rooks:', JSON.stringify(solution));
   return solution;
@@ -24,31 +56,41 @@ window.findNRooksSolution = function(n) {
 
 // return the number of nxn chessboards that exist, with n rooks placed such that none of them can attack each other
 window.countNRooksSolutions = function(n) {
-  var solutions = [];
+  //var solutions = []; unecessary memory for just counting, but good for visualizing all boards
   var solutionCount = 0;
   // make the board of size n
   var board = new Board({n: n});
   //arguments board + row;
-  var helper = function (boardState, currentRow, piecesPlaced) {
+  var helper = function (boardState, currentRow, piecesPlaced, conflictRows, conflictCols) {
+    var rowCheck = conflictRows || new Array(n);
+    var colCheck = conflictCols || new Array(n);
     var row = currentRow;
     var count = piecesPlaced;
-    for (let i = 0; i < n; i++) {
+    for (let col = 0; col < n; col++) {
     //with the new row, for each spot in the row, try to place a piece;
-      boardState.togglePiece(row, i);
+      boardState.togglePiece(row, col);
     //if piece is valid go down;
-      if (boardState.hasAnyColConflicts()) {
-        //if conflict, continue
-        boardState.togglePiece(row, i);
+      if (rowCheck[row] || colCheck[col]) {
+        //if conflict, take off the piece, and continue to the next column
+        boardState.togglePiece(row, col);
         continue;
       } else {
         count++;
         if (count === n) {
-          solutions.push(boardState);
+          //var newBoard = {...boardState};
+          //solutions.push(newBoard); unecessary memory for just counting, but good for visualizing all boards
           solutionCount++;
-          boardState.togglePiece(row, i);
+          boardState.togglePiece(row, col);
+          count--;
           continue;
         }
-        helper(boardState, row + 1, count);
+        rowCheck[row] = 1;
+        colCheck[col] = 1;
+        helper(boardState, row + 1, count, rowCheck, colCheck);
+        rowCheck[row] = 0;
+        colCheck[col] = 0;
+        boardState.togglePiece(row, col);
+        count--;
       }
     }
   }
